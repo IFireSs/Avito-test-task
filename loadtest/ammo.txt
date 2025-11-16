@@ -1,0 +1,6 @@
+[Connection: close]
+[Host: localhost]
+
+/team/get?team_name=backend
+/users/getReview?user_id=u_backend_dev1
+/stats/reviewerAssignments

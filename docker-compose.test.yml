@@ -1,0 +1,59 @@
+version: '3.9'
+
+services:
+  test_db:
+    image: postgres:16
+    container_name: pr_test_db
+    environment:
+      POSTGRES_DB: pr_db_test
+      POSTGRES_USER: pr_test_user
+      POSTGRES_PASSWORD: pr_test_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - pr_test_db_data:/var/lib/postgresql/data
+    networks:
+      - pr_test_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pr_test_user -d pr_db_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  test_flyway:
+    image: flyway/flyway:10
+    depends_on:
+      test_db:
+        condition: service_healthy
+    command: >
+      -connectRetries=60
+      -url=jdbc:postgresql://test_db:5432/pr_db_test
+      -user=pr_test_user
+      -password=pr_test_password
+      -locations=filesystem:/flyway/sql
+      migrate
+    volumes:
+      - ./migrations:/flyway/sql:ro
+    networks:
+      - pr_test_net
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    depends_on:
+      test_flyway:
+        condition: service_completed_successfully
+    environment:
+      TEST_DATABASE_DSN: postgres://pr_test_user:pr_test_password@test_db:5432/pr_db_test?sslmode=disable
+    networks:
+      - pr_test_net
+    command: >
+      sh -c "go test ./tests -count=1"
+
+networks:
+  pr_test_net:
+
+volumes:
+  pr_test_db_data:

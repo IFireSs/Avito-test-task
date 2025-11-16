@@ -1,0 +1,36 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.59.1
+          args: ./...
+
+      - name: Run tests via docker compose
+        run: |
+          docker compose -f docker-compose.test.yml run --rm test_flyway
+          docker compose -f docker-compose.test.yml run --rm tests
+
+      - name: Docker compose down
+        if: always()
+        run: |
+          docker compose -f docker-compose.test.yml down --volumes

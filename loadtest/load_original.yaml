@@ -1,0 +1,20 @@
+phantom:
+  address: api:8080
+
+  ammo_type: uri
+  ammofile: ammo.txt
+
+  load_profile:
+    load_type: rps
+    schedule: const(5, 1m)
+
+  header_http: "1.1"
+  headers:
+    - "[Host: api]"
+    - "[Connection: close]"
+
+console:
+  enabled: true
+
+telegraf:
+  enabled: false

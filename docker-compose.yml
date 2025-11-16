@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: pr_db
+    environment:
+      POSTGRES_DB: prservice
+      POSTGRES_USER: prservice
+      POSTGRES_PASSWORD: prservice
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prservice -d prservice"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  flyway:
+    image: flyway/flyway:10
+    container_name: pr_flyway
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - "-url=jdbc:postgresql://db:5432/prservice"
+      - "-user=prservice"
+      - "-password=prservice"
+      - "-connectRetries=60"
+      - "migrate"
+    volumes:
+      - ./migrations:/flyway/sql
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pr_api
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
+    environment:
+      DB_DSN: postgres://prservice:prservice@db:5432/prservice?sslmode=disable
+      ADMIN_TOKEN: avito-internship
+    ports:
+      - "8080:8080"
+volumes:
+  db_data:
+
+

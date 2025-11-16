@@ -1,0 +1,16 @@
+# Go
+bin/
+*.exe
+*.test
+*.out
+
+# IDE
+.idea/
+
+# Logs
+*.log
+loadtest/logs/
+loadtest/result/
+
+# Docker
+*.env
